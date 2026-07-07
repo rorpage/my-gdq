@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My GDQ</title>
+  <meta name="description" content="A filtered Games Done Quick schedule. Add game keywords and see only your runs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pitch: '#0A1712',
+            surface: '#122519',
+            line: '#1E3A2C',
+            ink: '#D7E4DC',
+            moss: '#6E8A7B',
+            live: '#4ADE80',
+            star: '#F2B441',
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-pitch font-mono text-ink antialiased">
+  <my-gdq-app></my-gdq-app>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

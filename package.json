@@ -1,0 +1,11 @@
+{
+  "name": "my-gdq",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.2.0"
+  }
+}
