@@ -18,8 +18,8 @@ A filtered Games Done Quick schedule. Pick an event, keep a keyword watchlist (l
 - `index.html`: shell, Tailwind config, mounts `<my-gdq-app>`.
 - `js/schedule-utils.js`: pure functions (filtering, grouping, formatting). Fully unit tested, no DOM or network.
 - `js/app.js`: the `<my-gdq-app>` component. State on the instance, full innerHTML render passes, event delegation on the root.
-- `api/events.ts`: proxy for `GET https://gamesdonequick.com/tracker/api/v2/events/`.
-- `api/runs.ts`: proxy for `GET https://gamesdonequick.com/tracker/api/v2/events/{id}/runs/`, takes `?event=ID`.
+- `api/events.ts`: proxy for `GET https://tracker.gamesdonequick.com/tracker/api/v2/events/`.
+- `api/runs.ts`: proxy for `GET https://tracker.gamesdonequick.com/tracker/api/v2/events/{id}/runs/`, takes `?event=ID`.
 
 ## Key decisions
 
@@ -32,6 +32,10 @@ A filtered Games Done Quick schedule. Pick an event, keep a keyword watchlist (l
 ## API notes
 
 The GDQ donation tracker is open source (GamesDoneQuick/donation-tracker). The v2 API returns `{count, next, previous, results}`. Run objects include zoned ISO 8601 `starttime`/`endtime`, `category`, `console`, and `runners` (array of objects with `name`). The bare `/schedule` page 302s to `/schedule/{eventId}` for the current event.
+
+## Open questions
+
+- **Tracker request headers.** The proxies now send a browser-like User-Agent to the tracker API, on the theory that bare server-side fetches were getting blocked. This is unverified: the sandbox this was written in cannot reach `gamesdonequick.com` or `tracker.gamesdonequick.com` at all (blocked by its own egress policy), so the fix could not be tested end to end. Confirm after deploy that `/api/events` and `/api/runs?event=66` actually return data for SGDQ 2026; if they still fail, capture the upstream status code and response body (the proxies currently swallow both on error) to diagnose further.
 
 ## Session history
 
@@ -46,3 +50,7 @@ Renamed the app to My GDQ. Replaced per-run starring with a persistent keyword w
 ### 2026-07-06: Keywords also match runners
 
 Extended `matchesAnyKeyword()` to search runner names alongside the game title, so a runner's handle in the watchlist surfaces all of their runs. One shared keyword list covers both; no separate runner UI needed. Tests updated, 11 passing.
+
+### 2026-07-08: Tracker moved to its own subdomain
+
+The SGDQ 2026 schedule stopped loading; user reported watching the official `gamesdonequick.com/schedule/66` page and seeing no API calls at all. Research turned up that GDQ split its site: the classic donation-tracker Django app (same `/tracker/api/v2/` REST endpoints, same integer event IDs) now lives at `tracker.gamesdonequick.com` instead of `gamesdonequick.com/tracker`, while `gamesdonequick.com` itself is a newer marketing/schedule frontend that renders server-side, which is why its network tab showed nothing to reverse-engineer. Updated both proxies to the new base URL and added a browser-like User-Agent header, since direct fetches to the tracker were coming back 403 (Cloudflare bot protection was the leading theory). Not verified live: this sandbox's egress policy blocks `gamesdonequick.com` and its subdomains outright, so the fix needs confirmation after deploy. See "Open questions" above.

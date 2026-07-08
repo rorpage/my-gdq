@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const TRACKER = 'https://gamesdonequick.com/tracker/api/v2';
+const TRACKER = 'https://tracker.gamesdonequick.com/tracker/api/v2';
 const MAX_PAGES = 10;
+const REQUEST_HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; my-gdq/1.0)' };
 
 /**
  * Proxy for GET /tracker/api/v2/events/.
@@ -14,7 +15,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     let url: string | null = `${TRACKER}/events/`;
     let pages = 0;
     while (url && pages < MAX_PAGES) {
-      const upstream = await fetch(url);
+      const upstream = await fetch(url, { headers: REQUEST_HEADERS });
       if (!upstream.ok) {
         res.status(502).json({ error: `Tracker responded with ${upstream.status}.` });
         return;
