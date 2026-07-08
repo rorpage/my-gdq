@@ -9,6 +9,7 @@ import {
   matchesAnyKeyword,
   matchesQuery,
   normalizeKeyword,
+  pickCurrentEvent,
   runnerNames,
   sortEventsNewestFirst,
 } from '../js/schedule-utils.js';
@@ -112,4 +113,28 @@ test('sortEventsNewestFirst prefers datetime, falls back to id', () => {
   assert.deepEqual(sortEventsNewestFirst(events).map((e) => e.name), ['SGDQ 2026', 'AGDQ 2025', 'AGDQ 2024']);
   const byId = [{ id: 5 }, { id: 9 }, { id: 7 }];
   assert.deepEqual(sortEventsNewestFirst(byId).map((e) => e.id), [9, 7, 5]);
+});
+
+test('pickCurrentEvent prefers the most recently started event', () => {
+  const events = [
+    { id: 1, datetime: '2026-01-14T00:00:00Z' },
+    { id: 2, datetime: '2026-07-05T00:00:00Z' },
+    { id: 3, datetime: '2026-07-08T00:00:00Z' },
+  ];
+  const now = Date.parse('2026-07-08T12:00:00Z');
+  assert.equal(pickCurrentEvent(events, now).id, 3);
+});
+
+test('pickCurrentEvent falls back to the soonest upcoming event before any has started', () => {
+  const events = [
+    { id: 1, datetime: '2026-12-25T00:00:00Z' },
+    { id: 2, datetime: '2026-08-01T00:00:00Z' },
+  ];
+  const now = Date.parse('2026-07-08T12:00:00Z');
+  assert.equal(pickCurrentEvent(events, now).id, 2);
+});
+
+test('pickCurrentEvent ignores events without a usable datetime', () => {
+  const events = [{ id: 1, datetime: 'not-a-date' }, { id: 2 }];
+  assert.equal(pickCurrentEvent(events, Date.now()), null);
 });

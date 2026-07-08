@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const TRACKER = 'https://tracker.gamesdonequick.com/tracker/api/v2';
-const MAX_PAGES = 10;
-const REQUEST_HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; my-gdq/1.0)' };
+import { TRACKER, fetchAllPages } from './_lib.js';
 
 /**
  * Proxy for GET /tracker/api/v2/events/.
@@ -11,22 +8,13 @@ const REQUEST_HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; my-gdq/1.0)' }
  */
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
-    const results: unknown[] = [];
-    let url: string | null = `${TRACKER}/events/`;
-    let pages = 0;
-    while (url && pages < MAX_PAGES) {
-      const upstream = await fetch(url, { headers: REQUEST_HEADERS });
-      if (!upstream.ok) {
-        res.status(502).json({ error: `Tracker responded with ${upstream.status}.` });
-        return;
-      }
-      const data: { results?: unknown[]; next?: string | null } = await upstream.json();
-      results.push(...(data.results ?? []));
-      url = data.next ?? null;
-      pages += 1;
+    const page = await fetchAllPages(`${TRACKER}/events/`);
+    if ('error' in page) {
+      res.status(page.status).json({ error: page.error });
+      return;
     }
     res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
-    res.status(200).json({ results });
+    res.status(200).json({ results: page.results });
   } catch {
     res.status(502).json({ error: 'Could not reach the GDQ tracker.' });
   }

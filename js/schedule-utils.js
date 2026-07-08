@@ -154,3 +154,24 @@ export function sortEventsNewestFirst(events) {
     return (b.id ?? 0) - (a.id ?? 0);
   });
 }
+
+/**
+ * Pick the event that is running right now, approximated as "most recently
+ * started" since the tracker exposes no explicit event end date. Falls back
+ * to the soonest upcoming event if none has started yet.
+ * @param {object[]} events Events from the tracker API, each with a "datetime" field.
+ * @param {Date|number} now Current time.
+ * @returns {object|null} The picked event, or null if no event has a usable datetime.
+ */
+export function pickCurrentEvent(events, now) {
+  const t = now instanceof Date ? now.getTime() : now;
+  const withTime = (events || [])
+    .map((event) => ({ event, time: Date.parse(event.datetime ?? '') }))
+    .filter((e) => Number.isFinite(e.time));
+  if (!withTime.length) return null;
+  const started = withTime.filter((e) => e.time <= t);
+  if (started.length) {
+    return started.reduce((latest, e) => (e.time > latest.time ? e : latest)).event;
+  }
+  return withTime.reduce((soonest, e) => (e.time < soonest.time ? e : soonest)).event;
+}
