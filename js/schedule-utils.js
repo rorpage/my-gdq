@@ -142,6 +142,25 @@ export function isLive(run, now) {
 }
 
 /**
+ * Whether a run is worth surfacing right now: it hasn't ended yet, and it
+ * starts within the given lookahead window from now. Avoids the midnight
+ * cliff of a strict calendar-day filter, since marathon schedules run
+ * straight through the night.
+ * @param {object} run Run with starttime and endtime.
+ * @param {Date|number} now Current time.
+ * @param {number} hours Lookahead window in hours.
+ * @returns {boolean} True when the run starts soon (or is already live) and hasn't ended.
+ */
+export function isUpcomingWithin(run, now, hours) {
+  const t = now instanceof Date ? now.getTime() : now;
+  const start = Date.parse(run.starttime);
+  const end = Date.parse(run.endtime);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+  if (end <= t) return false;
+  return start <= t + hours * 60 * 60 * 1000;
+}
+
+/**
  * Sort tracker events newest first. Prefers the event datetime, falls back to id.
  * @param {object[]} events Events from the tracker API.
  * @returns {object[]} New sorted array, input untouched.

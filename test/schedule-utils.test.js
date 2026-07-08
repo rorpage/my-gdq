@@ -6,6 +6,7 @@ import {
   formatDuration,
   groupRunsByDay,
   isLive,
+  isUpcomingWithin,
   matchesAnyKeyword,
   matchesQuery,
   normalizeKeyword,
@@ -137,4 +138,32 @@ test('pickCurrentEvent falls back to the soonest upcoming event before any has s
 test('pickCurrentEvent ignores events without a usable datetime', () => {
   const events = [{ id: 1, datetime: 'not-a-date' }, { id: 2 }];
   assert.equal(pickCurrentEvent(events, Date.now()), null);
+});
+
+test('isUpcomingWithin catches a run just after a local midnight boundary', () => {
+  const r = run({ starttime: '2026-07-09T04:39:00Z', endtime: '2026-07-09T05:39:00Z' });
+  const checkedAt = Date.parse('2026-07-08T20:00:00Z');
+  assert.equal(isUpcomingWithin(r, checkedAt, 24), true);
+});
+
+test('isUpcomingWithin excludes runs starting beyond the lookahead window', () => {
+  const r = run({ starttime: '2026-07-10T18:00:00Z', endtime: '2026-07-10T19:00:00Z' });
+  const checkedAt = Date.parse('2026-07-08T20:00:00Z');
+  assert.equal(isUpcomingWithin(r, checkedAt, 24), false);
+});
+
+test('isUpcomingWithin still matches a run already in progress', () => {
+  const r = run({ starttime: '2026-07-08T18:00:00Z', endtime: '2026-07-08T20:00:00Z' });
+  const checkedAt = Date.parse('2026-07-08T19:00:00Z');
+  assert.equal(isUpcomingWithin(r, checkedAt, 24), true);
+});
+
+test('isUpcomingWithin excludes runs that already ended', () => {
+  const r = run({ starttime: '2026-07-08T17:00:00Z', endtime: '2026-07-08T18:00:00Z' });
+  const checkedAt = Date.parse('2026-07-08T19:00:00Z');
+  assert.equal(isUpcomingWithin(r, checkedAt, 24), false);
+});
+
+test('isUpcomingWithin rejects unparseable times', () => {
+  assert.equal(isUpcomingWithin({ starttime: 'bad', endtime: 'bad' }, Date.now(), 24), false);
 });
